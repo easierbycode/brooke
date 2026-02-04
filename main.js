@@ -1,5 +1,7 @@
 const FRAME_WIDTH = 63;
 const FRAME_HEIGHT = 56;
+const BACKGROUND_COLOR = 0x05065a;
+const STAR_COLORS = [0x9feaff, 0x6fd3ff, 0x4aa8ff, 0x2f6bff];
 const SHEET_KEY = "brooke-sheet";
 const SPRITESHEET_DATA_URL = [
   "data:image/png;base64,",
@@ -449,7 +451,10 @@ class BirthdayScene extends Phaser.Scene {
       const x = Phaser.Math.Between(20, width - 20);
       const y = Phaser.Math.Between(20, height - 20);
       const radius = Phaser.Math.Between(1, 2);
-      const star = this.add.circle(x, y, radius, 0xffffff, 0.8);
+      const color =
+        STAR_COLORS[Phaser.Math.Between(0, STAR_COLORS.length - 1)];
+      const baseAlpha = Phaser.Math.FloatBetween(0.5, 0.9);
+      const star = this.add.circle(x, y, radius, color, baseAlpha);
       star.setDepth(0);
       this.starLayer.add(star);
 
@@ -504,7 +509,7 @@ const config = {
   parent: "game-container",
   width: 900,
   height: 540,
-  backgroundColor: "#0e1016",
+  backgroundColor: BACKGROUND_COLOR,
   antialias: false,
   pixelArt: true,
   roundPixels: true,
