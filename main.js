@@ -213,6 +213,7 @@ const CAKE_DATA_URL = [
   "DVhFQ+CElxyPd276IYAWDYETXno83rnphwA6NES8of3uH1SmHwLoUNt4w68ej3du+iGAAfqrx+Odm34IoIdOiTf8qvF456YfAlhBbeINv3I83rnphwBWkC/e",
   "jqgqHs/H/2H71dMPAWxBf8V4vB/0hWg+jT4oeuUU/g/6QZ1oPo1qhSvE/0HH9P8BaSNUczbMbfwAAAAASUVORK5CYII="
 ].join("");
+
 const CAKE_KEY = "cake-island";
 
 const LYRICS_WORDS = [
@@ -271,11 +272,11 @@ class BirthdayScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.spritesheet(SHEET_KEY, SPRITESHEET_URL, {
+    this.load.spritesheet(SHEET_KEY, SPRITESHEET_DATA_URL, {
       frameWidth: FRAME_WIDTH,
       frameHeight: FRAME_HEIGHT,
     });
-    this.load.image(CAKE_KEY, CAKE_URL);
+    this.load.image(CAKE_KEY, CAKE_DATA_URL);
   }
 
   create() {
@@ -284,7 +285,7 @@ class BirthdayScene extends Phaser.Scene {
         .text(
           40,
           40,
-          "Spritesheet failed to load",
+          "Embedded spritesheet failed to load",
           {
             fontFamily: "Georgia, serif",
             fontSize: "22px",
@@ -296,6 +297,7 @@ class BirthdayScene extends Phaser.Scene {
     }
 
     this.words = LYRICS_WORDS.slice();
+    this.applyPixelArtFilters();
     this.createAnimations();
 
     this.createStars();
@@ -376,24 +378,28 @@ class BirthdayScene extends Phaser.Scene {
     this.layoutStars();
 
     if (this.cake) {
-      this.cake.setPosition(width / 2, height * 0.55);
-      const scale = Math.min(width / 700, height / 520);
-      this.cake.setScale(Math.max(0.7, Math.min(1.2, scale)));
+      const targetScale = Math.min(width / 700, height / 520);
+      const snappedScale = Math.max(
+        0.5,
+        Math.min(2, Math.round(targetScale * 2) / 2)
+      );
+      this.cake.setScale(snappedScale);
+      this.cake.setPosition(Math.round(width / 2), Math.round(height * 0.55));
     }
 
     if (this.char1) {
-      this.char1.setPosition(width, height);
+      this.char1.setPosition(Math.round(width), Math.round(height));
       this.char1.setDepth(2);
     }
 
     if (this.char2) {
-      this.char2.setPosition(width / 2, height);
+      this.char2.setPosition(Math.round(width / 2), Math.round(height));
       this.char2.setDepth(2);
     }
 
     if (this.dialog && this.char2) {
       const center = this.char2.getCenter();
-      this.dialog.setPosition(center.x, center.y);
+      this.dialog.setPosition(Math.round(center.x), Math.round(center.y));
       const wrapWidth = Math.max(240, Math.min(420, width - 40));
       if (typeof this.dialog.setWordWrapWidth === "function") {
         this.dialog.setWordWrapWidth(wrapWidth);
@@ -401,6 +407,18 @@ class BirthdayScene extends Phaser.Scene {
         this.dialog.setStyle({ wordWrap: { width: wrapWidth } });
       }
     }
+  }
+
+  applyPixelArtFilters() {
+    const setNearest = (key) => {
+      const texture = this.textures.get(key);
+      if (texture && typeof texture.setFilter === "function") {
+        texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      }
+    };
+
+    setNearest(SHEET_KEY);
+    setNearest(CAKE_KEY);
   }
 
   createStars() {
@@ -453,7 +471,7 @@ class BirthdayScene extends Phaser.Scene {
         .text(
           40,
           70,
-          "Cake image failed to load",
+          "Embedded cake image failed to load",
           {
             fontFamily: "Georgia, serif",
             fontSize: "18px",
@@ -467,6 +485,9 @@ class BirthdayScene extends Phaser.Scene {
 
     this.cake = this.add.image(0, 0, CAKE_KEY).setOrigin(0.5, 0.5);
     this.cake.setDepth(1);
+    if (typeof this.cake.setRoundPixels === "function") {
+      this.cake.setRoundPixels(true);
+    }
     this.tweens.add({
       targets: this.cake,
       y: "-=12",
@@ -484,6 +505,7 @@ const config = {
   width: 900,
   height: 540,
   backgroundColor: "#0e1016",
+  antialias: false,
   pixelArt: true,
   roundPixels: true,
   scale: {
