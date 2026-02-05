@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Monster Eyes</title>
+    <link rel='stylesheet' href='https://codepen.io/CodeMonkeyGames/pen/RwdxKaM.css'><link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <!-- Copyright 2023 The MediaPipe Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. -->
+
+<link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+
+<div id='app' style='align-items: start'>
+  <section id="demos" class="invisible">
+    <!--     <h1>Face detection for monsters</h1> -->
+    <p><b>Click the image below</b> to monsterize</p>
+
+    <div class="detectOnClick">
+      <img src="https://assets.codepen.io/11817390/brooke_at_joes_PXL_20241221_195823621.jpg" width="100%" style="width:268px; height:358px" crossorigin="anonymous" title="Click to get classification!" />
+    </div>
+    <div id="liveView" class="videoView" style='display:none'>
+      <button id="webcamButton" class="mdc-button mdc-button--raised">
+        <span class="mdc-button__ripple"></span>
+        <span class="mdc-button__label">ENABLE WEBCAM</span>
+      </button>
+      <video id="webcam" autoplay playsinline></video>
+    </div>
+  </section>
+</div>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/phaser/3.70.0/phaser.js'></script><script type="module" src="./script.js"></script>
+
+  </body>
+  
+</html>
