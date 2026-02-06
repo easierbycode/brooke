@@ -217,6 +217,11 @@ const CAKE_DATA_URL = [
 ].join("");
 
 const CAKE_KEY = "cake-island";
+const MONSTER_EYE_KEY = "monster-eye";
+const MONSTER_EYE_URL = "https://assets.codepen.io/11817390/evil-brain-eye.png";
+const MONSTER_EYE_FRAME_WIDTH = 22;
+const MONSTER_EYE_FRAME_HEIGHT = 10;
+const MONSTER_BOUNCE_SPEED = 140;
 
 const LYRICS_WORDS = [
   "Happy",
@@ -271,6 +276,12 @@ class BirthdayScene extends Phaser.Scene {
     this.cake = null;
     this.starLayer = null;
     this.starTweens = [];
+    this.monsterContainer = null;
+    this.monsterImage = null;
+    this.monsterEyes = [];
+    this.monsterVelocity = { x: MONSTER_BOUNCE_SPEED, y: MONSTER_BOUNCE_SPEED };
+    this.monsterPosition = { x: 0, y: 0 };
+    this.monsterPointer = { x: 0, y: 0 };
   }
 
   preload() {
@@ -279,6 +290,10 @@ class BirthdayScene extends Phaser.Scene {
       frameHeight: FRAME_HEIGHT,
     });
     this.load.image(CAKE_KEY, CAKE_DATA_URL);
+    this.load.spritesheet(MONSTER_EYE_KEY, MONSTER_EYE_URL, {
+      frameWidth: MONSTER_EYE_FRAME_WIDTH,
+      frameHeight: MONSTER_EYE_FRAME_HEIGHT,
+    });
   }
 
   create() {
@@ -304,6 +319,7 @@ class BirthdayScene extends Phaser.Scene {
 
     this.createStars();
     this.createCakeIsland();
+    this.setupMonsterEyes();
 
     this.char1 = this.add.sprite(0, 0, SHEET_KEY, 0).setOrigin(1, 1);
     this.char2 = this.add.sprite(0, 0, SHEET_KEY, 6).setOrigin(0.5, 1);
@@ -501,6 +517,182 @@ class BirthdayScene extends Phaser.Scene {
       repeat: -1,
       ease: "Sine.easeInOut",
     });
+  }
+
+  setupMonsterEyes() {
+    this.monsterContainer = document.getElementById("monster-container");
+    this.monsterImage = document.getElementById("monster-image");
+
+    if (!this.monsterContainer || !this.monsterImage) {
+      return;
+    }
+
+    this.monsterPointer = {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    };
+
+    window.addEventListener("mousemove", (event) => {
+      this.monsterPointer = { x: event.clientX, y: event.clientY };
+    });
+
+    this.monsterEyes = [
+      this.add
+        .sprite(0, 0, MONSTER_EYE_KEY, 2)
+        .setOrigin(0.5, 0.5)
+        .setScale(2.4)
+        .setDepth(5)
+        .setFlipX(true),
+      this.add
+        .sprite(0, 0, MONSTER_EYE_KEY, 2)
+        .setOrigin(0.5, 0.5)
+        .setScale(2.4)
+        .setDepth(5)
+        .setFlipX(false),
+    ];
+
+    this.monsterEyes.forEach((eye) => eye.setVisible(false));
+
+    const viewport = this.getViewportSize();
+    this.monsterPosition = {
+      x: Math.max(20, viewport.width * 0.1),
+      y: Math.max(20, viewport.height * 0.15),
+    };
+    this.applyMonsterPosition();
+  }
+
+  update(time, delta) {
+    this.updateMonsterContainer(delta);
+    this.updateMonsterEyes();
+  }
+
+  updateMonsterContainer(delta) {
+    if (!this.monsterContainer) {
+      return;
+    }
+
+    const viewport = this.getViewportSize();
+    const rect = this.monsterContainer.getBoundingClientRect();
+    const width = rect.width || this.monsterContainer.offsetWidth;
+    const height = rect.height || this.monsterContainer.offsetHeight;
+    const dt = Math.min(delta / 1000, 0.05);
+
+    this.monsterPosition.x += this.monsterVelocity.x * dt;
+    this.monsterPosition.y += this.monsterVelocity.y * dt;
+
+    if (this.monsterPosition.x <= 0) {
+      this.monsterPosition.x = 0;
+      this.monsterVelocity.x = Math.abs(this.monsterVelocity.x);
+    } else if (this.monsterPosition.x + width >= viewport.width) {
+      this.monsterPosition.x = viewport.width - width;
+      this.monsterVelocity.x = -Math.abs(this.monsterVelocity.x);
+    }
+
+    if (this.monsterPosition.y <= 0) {
+      this.monsterPosition.y = 0;
+      this.monsterVelocity.y = Math.abs(this.monsterVelocity.y);
+    } else if (this.monsterPosition.y + height >= viewport.height) {
+      this.monsterPosition.y = viewport.height - height;
+      this.monsterVelocity.y = -Math.abs(this.monsterVelocity.y);
+    }
+
+    this.applyMonsterPosition();
+  }
+
+  updateMonsterEyes() {
+    if (!this.monsterContainer || !this.monsterImage || !this.monsterEyes.length) {
+      return;
+    }
+
+    if (!this.monsterImage.complete) {
+      return;
+    }
+
+    const rect = this.monsterImage.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      return;
+    }
+
+    const anchors = this.getMonsterAnchors();
+    if (!anchors) {
+      return;
+    }
+
+    const canvasRect = this.game.canvas.getBoundingClientRect();
+    const scaleX = this.scale.width / canvasRect.width;
+    const scaleY = this.scale.height / canvasRect.height;
+    const toWorld = (clientX, clientY) => ({
+      x: (clientX - canvasRect.left) * scaleX,
+      y: (clientY - canvasRect.top) * scaleY,
+    });
+
+    const leftAnchor = toWorld(
+      rect.left + rect.width * anchors.left.x,
+      rect.top + rect.height * anchors.left.y
+    );
+    const rightAnchor = toWorld(
+      rect.left + rect.width * anchors.right.x,
+      rect.top + rect.height * anchors.right.y
+    );
+
+    this.monsterEyes[0].setPosition(leftAnchor.x, leftAnchor.y);
+    this.monsterEyes[1].setPosition(rightAnchor.x, rightAnchor.y);
+    this.monsterEyes.forEach((eye) => eye.setVisible(true));
+
+    const pointer = toWorld(this.monsterPointer.x, this.monsterPointer.y);
+    const boundsLeft = toWorld(rect.left, rect.top).x;
+    const boundsRight = toWorld(rect.right, rect.top).x;
+
+    this.monsterEyes.forEach((eye) => {
+      if (pointer.x < boundsLeft) {
+        eye.setFrame(eye.flipX ? 3 : 1);
+      } else if (pointer.x > boundsRight) {
+        eye.setFrame(eye.flipX ? 1 : 3);
+      } else {
+        eye.setFrame(2);
+      }
+    });
+  }
+
+  applyMonsterPosition() {
+    if (!this.monsterContainer) {
+      return;
+    }
+    this.monsterContainer.style.transform = `translate(${Math.round(
+      this.monsterPosition.x
+    )}px, ${Math.round(this.monsterPosition.y)}px)`;
+  }
+
+  getMonsterAnchors() {
+    if (!this.monsterContainer) {
+      return null;
+    }
+    const parseAnchor = (value) => {
+      if (!value) {
+        return null;
+      }
+      const [x, y] = value.split(",").map((entry) => Number(entry.trim()));
+      if (Number.isNaN(x) || Number.isNaN(y)) {
+        return null;
+      }
+      return { x, y };
+    };
+
+    const left = parseAnchor(this.monsterContainer.dataset.eyeLeft);
+    const right = parseAnchor(this.monsterContainer.dataset.eyeRight);
+
+    if (!left || !right) {
+      return null;
+    }
+
+    return { left, right };
+  }
+
+  getViewportSize() {
+    return {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
   }
 }
 

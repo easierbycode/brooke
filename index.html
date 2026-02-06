@@ -22,15 +22,82 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
+        overflow: hidden;
       }
 
       canvas {
         image-rendering: pixelated;
       }
+
+      #monster-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px;
+        padding: 16px;
+        border-radius: 999px;
+        background: rgba(9, 11, 72, 0.78);
+        border: 2px solid rgba(146, 219, 255, 0.9);
+        box-shadow:
+          0 0 12px rgba(124, 196, 255, 0.6),
+          0 0 28px rgba(124, 196, 255, 0.4),
+          0 0 48px rgba(124, 196, 255, 0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        z-index: 5;
+        color: #f5f5f5;
+        text-align: center;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      #monster-container strong {
+        font-size: 15px;
+      }
+
+      #monster-image {
+        width: 220px;
+        height: auto;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+        display: block;
+      }
+
+      @media (max-width: 600px) {
+        #monster-container {
+          width: 220px;
+          padding: 12px;
+        }
+
+        #monster-image {
+          width: 180px;
+        }
+      }
     </style>
   </head>
   <body>
     <div id="game-container"></div>
+    <div
+      id="monster-container"
+      data-eye-left="0.36,0.42"
+      data-eye-right="0.63,0.42"
+      aria-live="polite"
+    >
+      <strong>Monster Eyes Activated</strong>
+      <span>They can’t stop watching your cursor.</span>
+      <img
+        id="monster-image"
+        src="https://assets.codepen.io/11817390/brooke_at_joes_PXL_20241221_195823621.jpg"
+        alt="Brooke portrait for monster eyes"
+        crossorigin="anonymous"
+      />
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/phaser@4.0.0-rc.6/dist/phaser.min.js"></script>
     <script src="main.js"></script>
