@@ -223,6 +223,8 @@ const MONSTER_EYE_FRAME_WIDTH = 22;
 const MONSTER_EYE_FRAME_HEIGHT = 10;
 const MONSTER_BOUNCE_SPEED = 140;
 const BROOKE_BOUNCE_SPEED = 135;
+const COLLISION_TEXT_PARTICLE_LIFESPAN_MS = 2000;
+const COLLISION_PARTICLE_COOLDOWN_MS = 140;
 
 const LYRICS_WORDS = [
   "Happy",
@@ -286,6 +288,7 @@ class BirthdayScene extends Phaser.Scene {
     this.brookeContainer = null;
     this.brookePosition = { x: 0, y: 0 };
     this.brookeVelocity = { x: -BROOKE_BOUNCE_SPEED, y: BROOKE_BOUNCE_SPEED };
+    this.lastCollisionParticleAt = -Infinity;
   }
 
   preload() {
@@ -651,6 +654,8 @@ class BirthdayScene extends Phaser.Scene {
       return;
     }
 
+    this.emitCollisionTextParticles(monsterRect, brookeRect, "Brooke", "Sawyer");
+
     if (overlapX < overlapY) {
       const separation = overlapX / 2;
       if (a.x < b.x) {
@@ -676,6 +681,89 @@ class BirthdayScene extends Phaser.Scene {
       this.monsterVelocity.y = this.brookeVelocity.y;
       this.brookeVelocity.y = temp;
     }
+  }
+
+  emitCollisionTextParticles(leftRect, rightRect, leftText, rightText) {
+    if (this.time.now - this.lastCollisionParticleAt < COLLISION_PARTICLE_COOLDOWN_MS) {
+      return;
+    }
+    this.lastCollisionParticleAt = this.time.now;
+
+    const leftKey = `collision-text-${leftText}`;
+    const rightKey = `collision-text-${rightText}`;
+
+    this.generateTextParticleTexture(leftText, leftKey);
+    this.generateTextParticleTexture(rightText, rightKey);
+
+    const leftEmitter = this.add.particles(
+      this.monsterPosition.x + leftRect.width / 2,
+      this.monsterPosition.y + leftRect.height / 2,
+      leftKey,
+      {
+        lifespan: COLLISION_TEXT_PARTICLE_LIFESPAN_MS,
+        speed: { min: 50, max: 100 },
+        scale: { start: 0.5, end: 0 },
+        gravityY: 50,
+        blendMode: "ADD",
+        emitting: false,
+      }
+    );
+
+    const rightEmitter = this.add.particles(
+      this.brookePosition.x + rightRect.width / 2,
+      this.brookePosition.y + rightRect.height / 2,
+      rightKey,
+      {
+        lifespan: COLLISION_TEXT_PARTICLE_LIFESPAN_MS,
+        speed: { min: 50, max: 100 },
+        scale: { start: 0.5, end: 0 },
+        gravityY: 50,
+        blendMode: "ADD",
+        emitting: false,
+      }
+    );
+
+    leftEmitter.explode(20);
+    rightEmitter.explode(20);
+
+    this.time.delayedCall(COLLISION_TEXT_PARTICLE_LIFESPAN_MS + 100, () => {
+      leftEmitter.destroy();
+      rightEmitter.destroy();
+    });
+  }
+
+  generateTextParticleTexture(text, key) {
+    if (this.textures.exists(key)) {
+      return;
+    }
+
+    const tempText = this.add
+      .text(0, 0, text, {
+        fontFamily: "Georgia, serif",
+        fontSize: "64px",
+        color: "#ffffff",
+      })
+      .setOrigin(0, 0)
+      .setVisible(false);
+
+    tempText.updateText();
+    const { width, height } = tempText;
+
+    const rt = this.make.renderTexture(
+      {
+        x: 0,
+        y: 0,
+        width,
+        height,
+      },
+      false
+    );
+
+    rt.draw(tempText, 0, 0);
+    rt.saveTexture(key);
+
+    tempText.destroy();
+    rt.destroy();
   }
 
   getRectData(element) {
