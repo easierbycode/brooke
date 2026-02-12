@@ -56,6 +56,32 @@
         pointer-events: none;
       }
 
+      #brooke-bounce-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 260px;
+        padding: 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 2px solid rgba(255, 255, 255, 0.7);
+        box-shadow:
+          0 0 12px rgba(255, 255, 255, 0.35),
+          0 0 30px rgba(125, 217, 255, 0.25);
+        z-index: 6;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      #brooke-bounce-image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-radius: 999px;
+        display: block;
+      }
+
       #monster-container strong {
         font-size: 15px;
       }
@@ -95,6 +121,15 @@
         id="monster-image"
         src="https://assets.codepen.io/11817390/brooke_at_joes_PXL_20241221_195823621.jpg"
         alt="Brooke portrait for monster eyes"
+        crossorigin="anonymous"
+      />
+    </div>
+
+    <div id="brooke-bounce-container" aria-hidden="true">
+      <img
+        id="brooke-bounce-image"
+        src="https://cmg.files.show/brooke-sawyer.jpg"
+        alt=""
         crossorigin="anonymous"
       />
     </div>

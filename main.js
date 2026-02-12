@@ -222,6 +222,7 @@ const MONSTER_EYE_URL = "https://assets.codepen.io/11817390/evil-brain-eye.png";
 const MONSTER_EYE_FRAME_WIDTH = 22;
 const MONSTER_EYE_FRAME_HEIGHT = 10;
 const MONSTER_BOUNCE_SPEED = 140;
+const BROOKE_BOUNCE_SPEED = 135;
 
 const LYRICS_WORDS = [
   "Happy",
@@ -282,6 +283,9 @@ class BirthdayScene extends Phaser.Scene {
     this.monsterVelocity = { x: MONSTER_BOUNCE_SPEED, y: MONSTER_BOUNCE_SPEED };
     this.monsterPosition = { x: 0, y: 0 };
     this.monsterPointer = { x: 0, y: 0 };
+    this.brookeContainer = null;
+    this.brookePosition = { x: 0, y: 0 };
+    this.brookeVelocity = { x: -BROOKE_BOUNCE_SPEED, y: BROOKE_BOUNCE_SPEED };
   }
 
   preload() {
@@ -522,6 +526,7 @@ class BirthdayScene extends Phaser.Scene {
   setupMonsterEyes() {
     this.monsterContainer = document.getElementById("monster-container");
     this.monsterImage = document.getElementById("monster-image");
+    this.brookeContainer = document.getElementById("brooke-bounce-container");
 
     if (!this.monsterContainer || !this.monsterImage) {
       return;
@@ -558,45 +563,127 @@ class BirthdayScene extends Phaser.Scene {
       x: Math.max(20, viewport.width * 0.1),
       y: Math.max(20, viewport.height * 0.15),
     };
+
+    this.brookePosition = {
+      x: Math.max(20, viewport.width * 0.62),
+      y: Math.max(20, viewport.height * 0.5),
+    };
+
     this.applyMonsterPosition();
+    this.applyBrookePosition();
   }
 
   update(time, delta) {
-    this.updateMonsterContainer(delta);
+    this.updateBouncingContainers(delta);
     this.updateMonsterEyes();
   }
 
-  updateMonsterContainer(delta) {
-    if (!this.monsterContainer) {
+  updateBouncingContainers(delta) {
+    if (!this.monsterContainer || !this.brookeContainer) {
       return;
     }
 
     const viewport = this.getViewportSize();
-    const rect = this.monsterContainer.getBoundingClientRect();
-    const width = rect.width || this.monsterContainer.offsetWidth;
-    const height = rect.height || this.monsterContainer.offsetHeight;
+    const monsterRect = this.getRectData(this.monsterContainer);
+    const brookeRect = this.getRectData(this.brookeContainer);
     const dt = Math.min(delta / 1000, 0.05);
 
     this.monsterPosition.x += this.monsterVelocity.x * dt;
     this.monsterPosition.y += this.monsterVelocity.y * dt;
+    this.brookePosition.x += this.brookeVelocity.x * dt;
+    this.brookePosition.y += this.brookeVelocity.y * dt;
 
-    if (this.monsterPosition.x <= 0) {
-      this.monsterPosition.x = 0;
-      this.monsterVelocity.x = Math.abs(this.monsterVelocity.x);
-    } else if (this.monsterPosition.x + width >= viewport.width) {
-      this.monsterPosition.x = viewport.width - width;
-      this.monsterVelocity.x = -Math.abs(this.monsterVelocity.x);
-    }
+    this.bounceInsideViewport(
+      this.monsterPosition,
+      this.monsterVelocity,
+      monsterRect,
+      viewport
+    );
+    this.bounceInsideViewport(
+      this.brookePosition,
+      this.brookeVelocity,
+      brookeRect,
+      viewport
+    );
 
-    if (this.monsterPosition.y <= 0) {
-      this.monsterPosition.y = 0;
-      this.monsterVelocity.y = Math.abs(this.monsterVelocity.y);
-    } else if (this.monsterPosition.y + height >= viewport.height) {
-      this.monsterPosition.y = viewport.height - height;
-      this.monsterVelocity.y = -Math.abs(this.monsterVelocity.y);
-    }
+    this.resolveContainerCollision(monsterRect, brookeRect);
 
     this.applyMonsterPosition();
+    this.applyBrookePosition();
+  }
+
+  bounceInsideViewport(position, velocity, size, viewport) {
+    if (position.x <= 0) {
+      position.x = 0;
+      velocity.x = Math.abs(velocity.x);
+    } else if (position.x + size.width >= viewport.width) {
+      position.x = viewport.width - size.width;
+      velocity.x = -Math.abs(velocity.x);
+    }
+
+    if (position.y <= 0) {
+      position.y = 0;
+      velocity.y = Math.abs(velocity.y);
+    } else if (position.y + size.height >= viewport.height) {
+      position.y = viewport.height - size.height;
+      velocity.y = -Math.abs(velocity.y);
+    }
+  }
+
+  resolveContainerCollision(monsterRect, brookeRect) {
+    const a = {
+      x: this.monsterPosition.x,
+      y: this.monsterPosition.y,
+      width: monsterRect.width,
+      height: monsterRect.height,
+    };
+    const b = {
+      x: this.brookePosition.x,
+      y: this.brookePosition.y,
+      width: brookeRect.width,
+      height: brookeRect.height,
+    };
+
+    const overlapX = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+    const overlapY = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+
+    if (overlapX <= 0 || overlapY <= 0) {
+      return;
+    }
+
+    if (overlapX < overlapY) {
+      const separation = overlapX / 2;
+      if (a.x < b.x) {
+        this.monsterPosition.x -= separation;
+        this.brookePosition.x += separation;
+      } else {
+        this.monsterPosition.x += separation;
+        this.brookePosition.x -= separation;
+      }
+      const temp = this.monsterVelocity.x;
+      this.monsterVelocity.x = this.brookeVelocity.x;
+      this.brookeVelocity.x = temp;
+    } else {
+      const separation = overlapY / 2;
+      if (a.y < b.y) {
+        this.monsterPosition.y -= separation;
+        this.brookePosition.y += separation;
+      } else {
+        this.monsterPosition.y += separation;
+        this.brookePosition.y -= separation;
+      }
+      const temp = this.monsterVelocity.y;
+      this.monsterVelocity.y = this.brookeVelocity.y;
+      this.brookeVelocity.y = temp;
+    }
+  }
+
+  getRectData(element) {
+    const rect = element.getBoundingClientRect();
+    return {
+      width: rect.width || element.offsetWidth,
+      height: rect.height || element.offsetHeight,
+    };
   }
 
   updateMonsterEyes() {
@@ -661,6 +748,15 @@ class BirthdayScene extends Phaser.Scene {
     this.monsterContainer.style.transform = `translate(${Math.round(
       this.monsterPosition.x
     )}px, ${Math.round(this.monsterPosition.y)}px)`;
+  }
+
+  applyBrookePosition() {
+    if (!this.brookeContainer) {
+      return;
+    }
+    this.brookeContainer.style.transform = `translate(${Math.round(
+      this.brookePosition.x
+    )}px, ${Math.round(this.brookePosition.y)}px)`;
   }
 
   getMonsterAnchors() {
