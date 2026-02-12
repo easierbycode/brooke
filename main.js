@@ -707,6 +707,7 @@ class BirthdayScene extends Phaser.Scene {
 
     for (let i = 0; i < particleCount; i += 1) {
       const span = document.createElement("span");
+      span.className = "collision-text-particle";
       span.textContent = text;
       span.style.position = "fixed";
       span.style.left = `${originX}px`;
@@ -718,6 +719,7 @@ class BirthdayScene extends Phaser.Scene {
       span.style.fontWeight = "700";
       span.style.color = "#ffffff";
       span.style.mixBlendMode = "screen";
+      span.style.willChange = "transform, opacity";
       span.style.pointerEvents = "none";
       span.style.zIndex = "30";
 
