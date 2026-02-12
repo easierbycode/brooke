@@ -223,6 +223,8 @@ const MONSTER_EYE_FRAME_WIDTH = 22;
 const MONSTER_EYE_FRAME_HEIGHT = 10;
 const MONSTER_BOUNCE_SPEED = 140;
 const BROOKE_BOUNCE_SPEED = 135;
+const COLLISION_TEXT_PARTICLE_LIFESPAN_MS = 2000;
+const COLLISION_PARTICLE_COOLDOWN_MS = 140;
 
 const LYRICS_WORDS = [
   "Happy",
@@ -286,6 +288,7 @@ class BirthdayScene extends Phaser.Scene {
     this.brookeContainer = null;
     this.brookePosition = { x: 0, y: 0 };
     this.brookeVelocity = { x: -BROOKE_BOUNCE_SPEED, y: BROOKE_BOUNCE_SPEED };
+    this.lastCollisionParticleAt = -Infinity;
   }
 
   preload() {
@@ -651,6 +654,8 @@ class BirthdayScene extends Phaser.Scene {
       return;
     }
 
+    this.emitCollisionTextParticles(monsterRect, brookeRect, "Brooke", "Sawyer");
+
     if (overlapX < overlapY) {
       const separation = overlapX / 2;
       if (a.x < b.x) {
@@ -675,6 +680,76 @@ class BirthdayScene extends Phaser.Scene {
       const temp = this.monsterVelocity.y;
       this.monsterVelocity.y = this.brookeVelocity.y;
       this.brookeVelocity.y = temp;
+    }
+  }
+
+  emitCollisionTextParticles(leftRect, rightRect, leftText, rightText) {
+    if (this.time.now - this.lastCollisionParticleAt < COLLISION_PARTICLE_COOLDOWN_MS) {
+      return;
+    }
+    this.lastCollisionParticleAt = this.time.now;
+
+    this.emitDomCollisionTextBurst(
+      this.monsterPosition.x + leftRect.width / 2,
+      this.monsterPosition.y + leftRect.height / 2,
+      leftText
+    );
+    this.emitDomCollisionTextBurst(
+      this.brookePosition.x + rightRect.width / 2,
+      this.brookePosition.y + rightRect.height / 2,
+      rightText
+    );
+  }
+
+  emitDomCollisionTextBurst(originX, originY, text) {
+    const particleCount = 20;
+    const gravityY = 50;
+
+    for (let i = 0; i < particleCount; i += 1) {
+      const span = document.createElement("span");
+      span.className = "collision-text-particle";
+      span.textContent = text;
+      span.style.position = "fixed";
+      span.style.left = `${originX}px`;
+      span.style.top = `${originY}px`;
+      span.style.transform = "translate(-50%, -50%) scale(0.5)";
+      span.style.transformOrigin = "center center";
+      span.style.fontFamily = "Georgia, serif";
+      span.style.fontSize = "28px";
+      span.style.fontWeight = "700";
+      span.style.color = "#ffffff";
+      span.style.mixBlendMode = "screen";
+      span.style.willChange = "transform, opacity";
+      span.style.pointerEvents = "none";
+      span.style.zIndex = "30";
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Phaser.Math.FloatBetween(50, 100);
+      const durationS = COLLISION_TEXT_PARTICLE_LIFESPAN_MS / 1000;
+      const travelX = Math.cos(angle) * speed * durationS;
+      const travelY =
+        Math.sin(angle) * speed * durationS + 0.5 * gravityY * durationS * durationS;
+
+      document.body.appendChild(span);
+
+      span.animate(
+        [
+          { transform: "translate(-50%, -50%) scale(0.5)", opacity: 1 },
+          {
+            transform: `translate(calc(-50% + ${travelX}px), calc(-50% + ${travelY}px)) scale(0)`,
+            opacity: 0,
+          },
+        ],
+        {
+          duration: COLLISION_TEXT_PARTICLE_LIFESPAN_MS,
+          easing: "ease-out",
+          fill: "forwards",
+        }
+      );
+
+      window.setTimeout(() => {
+        span.remove();
+      }, COLLISION_TEXT_PARTICLE_LIFESPAN_MS + 100);
     }
   }
 
