@@ -689,81 +689,68 @@ class BirthdayScene extends Phaser.Scene {
     }
     this.lastCollisionParticleAt = this.time.now;
 
-    const leftKey = `collision-text-${leftText}`;
-    const rightKey = `collision-text-${rightText}`;
-
-    this.generateTextParticleTexture(leftText, leftKey);
-    this.generateTextParticleTexture(rightText, rightKey);
-
-    const leftEmitter = this.add.particles(
+    this.emitDomCollisionTextBurst(
       this.monsterPosition.x + leftRect.width / 2,
       this.monsterPosition.y + leftRect.height / 2,
-      leftKey,
-      {
-        lifespan: COLLISION_TEXT_PARTICLE_LIFESPAN_MS,
-        speed: { min: 50, max: 100 },
-        scale: { start: 0.5, end: 0 },
-        gravityY: 50,
-        blendMode: "ADD",
-        emitting: false,
-      }
+      leftText
     );
-
-    const rightEmitter = this.add.particles(
+    this.emitDomCollisionTextBurst(
       this.brookePosition.x + rightRect.width / 2,
       this.brookePosition.y + rightRect.height / 2,
-      rightKey,
-      {
-        lifespan: COLLISION_TEXT_PARTICLE_LIFESPAN_MS,
-        speed: { min: 50, max: 100 },
-        scale: { start: 0.5, end: 0 },
-        gravityY: 50,
-        blendMode: "ADD",
-        emitting: false,
-      }
+      rightText
     );
-
-    leftEmitter.explode(20);
-    rightEmitter.explode(20);
-
-    this.time.delayedCall(COLLISION_TEXT_PARTICLE_LIFESPAN_MS + 100, () => {
-      leftEmitter.destroy();
-      rightEmitter.destroy();
-    });
   }
 
-  generateTextParticleTexture(text, key) {
-    if (this.textures.exists(key)) {
-      return;
+  emitDomCollisionTextBurst(originX, originY, text) {
+    const particleCount = 20;
+    const gravityY = 50;
+
+    for (let i = 0; i < particleCount; i += 1) {
+      const span = document.createElement("span");
+      span.className = "collision-text-particle";
+      span.textContent = text;
+      span.style.position = "fixed";
+      span.style.left = `${originX}px`;
+      span.style.top = `${originY}px`;
+      span.style.transform = "translate(-50%, -50%) scale(0.5)";
+      span.style.transformOrigin = "center center";
+      span.style.fontFamily = "Georgia, serif";
+      span.style.fontSize = "28px";
+      span.style.fontWeight = "700";
+      span.style.color = "#ffffff";
+      span.style.mixBlendMode = "screen";
+      span.style.willChange = "transform, opacity";
+      span.style.pointerEvents = "none";
+      span.style.zIndex = "30";
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Phaser.Math.FloatBetween(50, 100);
+      const durationS = COLLISION_TEXT_PARTICLE_LIFESPAN_MS / 1000;
+      const travelX = Math.cos(angle) * speed * durationS;
+      const travelY =
+        Math.sin(angle) * speed * durationS + 0.5 * gravityY * durationS * durationS;
+
+      document.body.appendChild(span);
+
+      span.animate(
+        [
+          { transform: "translate(-50%, -50%) scale(0.5)", opacity: 1 },
+          {
+            transform: `translate(calc(-50% + ${travelX}px), calc(-50% + ${travelY}px)) scale(0)`,
+            opacity: 0,
+          },
+        ],
+        {
+          duration: COLLISION_TEXT_PARTICLE_LIFESPAN_MS,
+          easing: "ease-out",
+          fill: "forwards",
+        }
+      );
+
+      window.setTimeout(() => {
+        span.remove();
+      }, COLLISION_TEXT_PARTICLE_LIFESPAN_MS + 100);
     }
-
-    const tempText = this.add
-      .text(0, 0, text, {
-        fontFamily: "Georgia, serif",
-        fontSize: "64px",
-        color: "#ffffff",
-      })
-      .setOrigin(0, 0)
-      .setVisible(false);
-
-    tempText.updateText();
-    const { width, height } = tempText;
-
-    const rt = this.make.renderTexture(
-      {
-        x: 0,
-        y: 0,
-        width,
-        height,
-      },
-      false
-    );
-
-    rt.draw(tempText, 0, 0);
-    rt.saveTexture(key);
-
-    tempText.destroy();
-    rt.destroy();
   }
 
   getRectData(element) {
